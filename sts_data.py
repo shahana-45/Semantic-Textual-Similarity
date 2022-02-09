@@ -105,18 +105,18 @@ class STSData:
         # create embedding vectors (using the vocab) from word tokens
         data['sentence_A'] = data['sentence_A'].apply(lambda x: self.vectorize_sequence(x))
         data['sentence_B'] = data['sentence_B'].apply(lambda x: self.vectorize_sequence(x))
-        data['relatedness_score'] = (data['relatedness_score'] / 4)
+        data['relatedness_score'] = (data['relatedness_score'] / self.normalization_const)
         
         # create list of tensors
         sen1 = []
         sen2 = []
         
         for index, row in data.iterrows():
-            sen1.append(torch.tensor(row['sentence_A']))
-            sen2.append(torch.tensor(row['sentence_B']))
+            sen1.append(torch.LongTensor(row['sentence_A']))
+            sen2.append(torch.LongTensor(row['sentence_B']))
             
         #data['relatedness_score'] = torch.tensor(data['relatedness_score'])
-        return (sen1, sen2, torch.tensor(data['relatedness_score']))
+        return (sen1, sen2, torch.FloatTensor(data['relatedness_score']))
               
             
     def get_data_loader(self, batch_size=8):
@@ -156,12 +156,29 @@ class STSData:
         #print(sen1)
         #print(sen2.size())
         
-        # create the training dataset and loader
+        # create the validation dataset and loader
         valid_dataset = STSDataset(sen1, sen2, labels, torch.tensor(lengths_1), torch.tensor(lengths_2))       
         valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=batch_size, drop_last=True)
         data_loaders["valid"] = valid_loader    
         
-        # TODO create test loader
+        # create test loader
+        test_data = self.test        
+        # convert to list of tensors
+        sen1, sen2, labels = self.data2tensors(test_data)
+        
+        # calculate length of each sentence
+        lengths_1 = [len(row) for row in sen1]
+        lengths_2 = [len(row) for row in sen2]
+        
+        # pad to maximum length of sentence in dataset
+        sen1 = self.pad_sequences(sen1, torch.tensor(lengths_1))
+        sen2 = self.pad_sequences(sen2, torch.tensor(lengths_2))
+        
+        # create the training dataset and loader
+        test_dataset = STSDataset(sen1, sen2, labels, torch.tensor(lengths_1), torch.tensor(lengths_2))       
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, drop_last=True)
+        data_loaders["test"] = test_loader         
+        
         return data_loaders 
 
     def sort_batch(self, batch, targets, lengths):
