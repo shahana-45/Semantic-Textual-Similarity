@@ -6,6 +6,10 @@ from torch.autograd import Variable
 import sklearn
 from sklearn.metrics import mean_squared_error
 import numpy as np
+import Trans_Encoder
+from Trans_Encoder import Embedder,PositionalEncoder, MultiHeadAttention, FeedForward, Norm, EncoderLayer, Encoder, Transformer
+from importlib import reload
+reload(Trans_Encoder)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -41,8 +45,24 @@ def train_model(model, optimizer, dataloader, data, max_epochs, config_dict):
             for batch_idx,train in enumerate(dataloader["train"]):
                 n_batches += 1
                 sen1_batch, sen2_batch, sen1_lengths, sen2_lengths, labels = train[0], train[1], train[2], train[3], train[4]
+                
+                
+                
                 input1 = nn.Parameter(model.embeddings(sen1_batch).float())
-                input2 = nn.Parameter(model.embeddings(sen2_batch).float())
+                input2 = nn.Parameter(model.embeddings(sen2_batch).float()) ## Remember to add input 1
+                
+                '''
+                input_seq = sen1_batch#.transpose(0,1)
+                input_pad = data.vocab.stoi['<pad>']
+                # creates mask with 0s wherever there is padding in the input
+                input_msk = (input_seq != 0).unsqueeze(1)
+
+                #print(input_msk)
+
+                print(model1(input1, input_msk).size())
+                
+                '''
+                
                 
                 input1.requires_grad_(True)
                 input2.requires_grad_(True)
@@ -67,12 +87,7 @@ def train_model(model, optimizer, dataloader, data, max_epochs, config_dict):
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2.0, norm_type=2)
                 
                 optimizer.step()
-                '''
-                print("Debug!!!") # code to look at gradients of parameters
-                for x in model.parameters():
-                    if x.requires_grad:
-                         print(x.name, x.grad)
-                '''
+
                                
                 total_loss.append(loss.item())
                 running_loss += loss.item()
@@ -87,7 +102,8 @@ def train_model(model, optimizer, dataloader, data, max_epochs, config_dict):
                     running_loss = 0.0
                     print('Training set accuracy:', (1 - (acc / 10)))
                     acc = 0.0
-
+                   
+                
             ## compute model metrics on dev set
             model.eval()
             print("Evaluating validation set ....")
@@ -112,6 +128,7 @@ def train_model(model, optimizer, dataloader, data, max_epochs, config_dict):
             )
             
             n_batches = 0
+        
            
         print('Finished Training')
     return model

@@ -6,6 +6,8 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from utils import similarity_score
 import copy
 
+#from Trans_Encoder import Embedder,PositionalEncoder, MultiHeadAttention, FeedForward, Norm, EncoderLayer, Encoder, Transformer
+
 """
 Wrapper class using Pytorch nn.Module to create the architecture for our model
 Architecture is based on the paper: 
@@ -55,6 +57,12 @@ class SiameseBiLSTMAttention(nn.Module):
         self.embeddings = torch.nn.Embedding.from_pretrained(embedding_weights)
         #print(self.embeddings)
         
+        #Transformer
+        #model = Transformer(self.embedding_size, self.output_size, d_model=512, N=6, heads=8)
+        
+        self.transformer_encoder = Transformer(self.embedding_size, self.embedding_size, d_model=self.embedding_size, N=6, heads=6)
+               
+        
         ## initialize lstm layer
         self.bilstm = nn.LSTM(self.embedding_size, self.lstm_hidden_size, self.lstm_layers, bidirectional=self.bidirectional)
         #self.hidden_state = self.init_hidden(self.batch_size)
@@ -92,7 +100,13 @@ class SiameseBiLSTMAttention(nn.Module):
         # TODO implement
         # pass batch of sentences and retrieve embeddings from it (now we have 3d tensor)
         #print(batch.size())
-        inputs2 = batch.permute(1, 0, 2)
+        
+        # creates mask with 0s wherever there is padding in the input (for transformer)
+        input_msk = (batch != 0).unsqueeze(1)
+        
+        encoder_output=self.transformer_encoder(batch, input_msk).size()
+
+        inputs2 = encoder_output.permute(1, 0, 2)
         
         outputs, (hn, cn) = self.bilstm(inputs2,self.hidden_state)    
         #print(outputs.size())
@@ -120,8 +134,12 @@ class SiameseBiLSTMAttention(nn.Module):
         """
         Performs the forward pass for each batch
         """
+        
+
         ## init context and hidden weights for lstm cell
         self.hidden_state = self.init_hidden(self.batch_size)
+        
+        
         
         # implement forward pass on both sentences. calculate similarity using similarity_score()
         output1, A1 = self.forward_once(sent1_batch, sent1_lengths)
@@ -130,7 +148,10 @@ class SiameseBiLSTMAttention(nn.Module):
         #print(output2)
         # TODO check how to pass data to similarity score
         score = similarity_score(output1, output2)
-
+        
+        
+        
+        
         return score, A1, A2
 
     
@@ -154,6 +175,6 @@ class SelfAttention(nn.Module):
         attn_weight_matrix = self.W_s2(torch.tanh(self.W_s1(attention_input)))
         attn_weight_matrix = attn_weight_matrix.permute(0, 2, 1)
         attn_weight_matrix = F.softmax(attn_weight_matrix, dim=2)
-
+        
         return attn_weight_matrix
         
