@@ -53,13 +53,13 @@ def train_model(model, optimizer, dataloader, data, max_epochs, config_dict):
                 y_pred, A1, A2 = model(input1, input2, sen1_lengths, sen2_lengths)
                 
                 # take 1 prediction per row (all are same)
-                p = y_pred[:,0]
+                #p = y_pred[:,0]
 
                 # calculate penalisation term
                 penalty1 = attention_penalty_loss(A1, config_dict["self_attention_config"]["penalty"], device)
                 penalty2 = attention_penalty_loss(A2, config_dict["self_attention_config"]["penalty"], device)
 
-                loss = custom_loss(p.float(), labels.float(), penalty1, penalty2, model.batch_size)
+                loss = custom_loss(y_pred.float(), labels.float(), penalty1, penalty2, model.batch_size)
                 
                 loss.backward()
                 
@@ -78,7 +78,7 @@ def train_model(model, optimizer, dataloader, data, max_epochs, config_dict):
                 running_loss += loss.item()
                 
                 # compute accuracy using sklearn's function
-                mse = mean_squared_error(labels.detach().numpy(), p.detach().numpy())
+                mse = mean_squared_error(labels.detach().numpy(), y_pred.detach().numpy())
                 acc += mse
                 total_train_acc += mse
 
@@ -112,7 +112,7 @@ def train_model(model, optimizer, dataloader, data, max_epochs, config_dict):
             )
             
             n_batches = 0
-           
+            
         print('Finished Training')
     return model
 
@@ -138,14 +138,14 @@ def evaluate_dev_set(model, data, criterion, data_loader, config_dict, device):
         #input1.requires_grad_(True)
         #input2.requires_grad_(True)
         y_pred, A1, A2 = model(input1, input2, sen1_lengths, sen2_lengths)
-        p = y_pred[:, 1]
+        #p = y_pred[:, 1]
         penalty1 = attention_penalty_loss(A1, config_dict["self_attention_config"]["penalty"], device)
         penalty2 = attention_penalty_loss(A2, config_dict["self_attention_config"]["penalty"], device) 
                       
-        loss = custom_loss(p.float(), labels.float(), penalty1, penalty2, model.batch_size)
+        loss = custom_loss(y_pred.float(), labels.float(), penalty1, penalty2, model.batch_size)
         running_vloss += loss.item()
        
-        acc = mean_squared_error(labels.detach().numpy(), p.detach().numpy())
+        acc = mean_squared_error(labels.detach().numpy(), y_pred.detach().numpy())
         total_accuracy += acc
         v_loss = running_vloss
         print('Validation loss: %.3f' % (running_vloss))

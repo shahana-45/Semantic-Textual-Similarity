@@ -28,8 +28,8 @@ def evaluate_test_set(model, data_loader, config_dict):
         input2 = nn.Parameter(model.embeddings(sen2_batch).float())
                 
         y_pred, A1, A2 = model(input1, input2, sen1_lengths, sen2_lengths)
-        p = y_pred[:, 1]
-        mse = mean_squared_error(labels.detach().numpy(), p.detach().numpy()) 
+        #p = y_pred[:, 1]
+        mse = mean_squared_error(labels.detach().numpy(), y_pred.detach().numpy()) 
         acc += mse    
         total_acc += mse
         

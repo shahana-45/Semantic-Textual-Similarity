@@ -68,6 +68,8 @@ class SiameseBiLSTMAttention(nn.Module):
         self.W_s2 = nn.Linear(self_attention_config["hidden_size"], self_attention_config["output_size"])
         torch.nn.init.xavier_uniform(self.W_s2.weight)
         self.W_s2.bias.data.fill_(0)
+        self.fc_layer = nn.Linear(self_attention_config["output_size"]*self.lstm_directions*self.lstm_hidden_size, self.fc_hidden_size)
+        torch.nn.init.xavier_uniform(self.fc_layer.weight)
         
         self.hidden_state = self.init_hidden(self.batch_size)
 
@@ -109,11 +111,12 @@ class SiameseBiLSTMAttention(nn.Module):
         # generate self-attentive sentence embeddings
         sentence_embeddings = annotation_matrix2@outputs2   # M = AH matrix from ICLR paper
         
-        #print(sentence_embeddings)
-        return sentence_embeddings, annotation_matrix2
-        
-        #print(sentence_embeddings.size())
-        #return sentence_embeddings, annotation_matrix2
+        dimensions = sentence_embeddings.size()[1]*sentence_embeddings.size()[2]
+        final_embeddings = sentence_embeddings.view(-1, dimensions)
+        #print(y.size())
+        fc_out = self.fc_layer(final_embeddings)
+        #print(fc_out.size())
+        return fc_out, annotation_matrix2
         
         
     def forward(self, sent1_batch, sent2_batch, sent1_lengths, sent2_lengths):
@@ -130,6 +133,7 @@ class SiameseBiLSTMAttention(nn.Module):
         #print(output2)
         # TODO check how to pass data to similarity score
         score = similarity_score(output1, output2)
+        #print(score)
 
         return score, A1, A2
 
