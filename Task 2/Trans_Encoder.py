@@ -47,7 +47,7 @@ class PositionalEncoder(nn.Module):
         #add constant to embedding
         seq_len = x.size(1)
         x = x + Variable(self.pe[:,:seq_len], \
-        requires_grad=True)#.cuda()
+        requires_grad=False)#.cuda() #Change to false
         return x
     
 class MultiHeadAttention(nn.Module):
@@ -82,8 +82,7 @@ class MultiHeadAttention(nn.Module):
 
         scores, attn = self.attention(q, k, v, self.d_k, mask, self.dropout)
         # concatenate heads and put through final linear layer
-        concat = scores.transpose(1,2).contiguous()\
-        .view(bs, -1, self.d_model)
+        concat = scores.transpose(1,2).contiguous().view(bs, -1, self.d_model)
         
         output = self.out(concat)
     

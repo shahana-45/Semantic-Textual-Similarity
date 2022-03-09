@@ -27,7 +27,7 @@ def evaluate_test_set(model, data_loader, config_dict):
         
         input1 = nn.Parameter(model.embeddings(sen1_batch).float())
         input2 = nn.Parameter(model.embeddings(sen2_batch).float())
-        
+                
         y_pred, A1, A2, attn_scores1, attn_scores2 = model(input1, input2, sen1_lengths, sen2_lengths)
         
         # return attention scores of the first sentences for heatmap visualisation
@@ -37,14 +37,14 @@ def evaluate_test_set(model, data_loader, config_dict):
             attn_scores_2= attn_scores2[0][None, :]
             first_sen = 1
         break
-        
         mse = mean_squared_error(labels.detach().numpy(), y_pred.detach().numpy()) 
         acc += mse    
         total_acc += mse
+
         
     print('Finished testing..............')
     print('Total test set accuracy: %.3f' % (1 - (total_acc/n_batches)))
 
     return attn_scores_1, attn_scores_2
-  
+        
     

@@ -7,6 +7,7 @@ from utils import similarity_score
 import copy
 import Trans_Encoder as trans
 
+
 #from Trans_Encoder import Embedder,PositionalEncoder, MultiHeadAttention, FeedForward, Norm, EncoderLayer, Encoder, Transformer
 
 """
@@ -72,10 +73,12 @@ class SiameseBiLSTMAttention(nn.Module):
         ## subsequent layers
         self.W_s1 = nn.Linear(self.lstm_directions*self.lstm_hidden_size, self_attention_config["hidden_size"])
         self.W_s1.bias.data.fill_(0)
+        self.dropout1 = nn.Dropout(0.1)
         torch.nn.init.xavier_uniform(self.W_s1.weight)
         self.W_s2 = nn.Linear(self_attention_config["hidden_size"], self_attention_config["output_size"])
         torch.nn.init.xavier_uniform(self.W_s2.weight)
         self.W_s2.bias.data.fill_(0)
+        
         self.fc_layer = nn.Linear(self_attention_config["output_size"]*self.lstm_directions*self.lstm_hidden_size, self.fc_hidden_size)
         torch.nn.init.xavier_uniform(self.fc_layer.weight)
         
@@ -106,8 +109,7 @@ class SiameseBiLSTMAttention(nn.Module):
         # creates mask with 0s wherever there is padding in the input (for transformer)
         input_msk = (batch != 0).unsqueeze(1)
         
-        encoder_output, scores =self.transformer_encoder(batch, input_msk) #.size()
-        #print(scores.size())
+        encoder_output, scores=self.transformer_encoder(batch, input_msk) #.size()
         inputs2 = encoder_output.permute(1, 0, 2)
         
         outputs, (hn, cn) = self.bilstm(inputs2,self.hidden_state)    
@@ -116,7 +118,10 @@ class SiameseBiLSTMAttention(nn.Module):
         outputs2 = torch.permute(outputs, (1, 0, 2))
 
         # calculate self_attention
-        annotation_matrix = self.W_s2(torch.tanh(self.W_s1(outputs2)))
+
+        annotation_matrix_temp=self.dropout1(torch.tanh(self.W_s1(outputs2)))
+        annotation_matrix = self.W_s2(annotation_matrix_temp)
+
         annotation_matrix1 = annotation_matrix.permute(0, 2, 1)
         annotation_matrix2 = F.softmax(annotation_matrix1, dim=2)
         
@@ -141,7 +146,8 @@ class SiameseBiLSTMAttention(nn.Module):
 
         ## init context and hidden weights for lstm cell
         self.hidden_state = self.init_hidden(self.batch_size)
-        #print("Shahana")
+        
+        
         # implement forward pass on both sentences. calculate similarity using similarity_score()
         output1, A1, attn_scores1 = self.forward_once(sent1_batch, sent1_lengths)
         output2, A2, attn_scores2 = self.forward_once(sent2_batch, sent2_lengths)
@@ -149,7 +155,10 @@ class SiameseBiLSTMAttention(nn.Module):
         #print(output2)
         # TODO check how to pass data to similarity score
         score = similarity_score(output1, output2)
-                           
+        
+        
+        
+        
         return score, A1, A2, attn_scores1, attn_scores2
 
     
