@@ -2,7 +2,7 @@
 
 Three PyTorch models for Semantic Textual Similarity (STS), the task of predicting how semantically related two sentences are, built from scratch for the *Neural Networks: Theory and Implementation* (NNTI) course at Saarland University. Each task builds on the last, culminating in an open-ended challenge to beat the earlier architectures.
 
-Trained and evaluated on the [SICK](https://huggingface.co/datasets/sick) (Sentences Involving Compositional Knowledge) dataset, which pairs sentences with a human-annotated relatedness score from 1 to 5.
+Trained and evaluated on the [SICK](http://marcobaroni.org/composes/sick.html) (Sentences Involving Compositional Knowledge) dataset, which pairs sentences with a human-annotated relatedness score from 1 to 5.
 
 ## Tasks
 
